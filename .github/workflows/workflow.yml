@@ -15,18 +15,30 @@ jobs:
         ARM_TENANT_ID: ${{ secrets.TENANTID }}
         SOURCE_DIR: ${{ github.workspace }}/simple-network
     steps:
+        - name: setEnv
+          if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+          run: echo '::set-env name=SOURCE_DIR::${{ github.workspace }}/modules/dev'
+
+        - name: setEnv
+          if: github.ref == 'refs/heads/test' && github.event_name == 'push'
+          run: echo '::set-env name=SOURCE_DIR::${{ github.workspace }}/modules/test'
+ 
+        - name: setEnv
+          if: github.ref == 'refs/heads/prod' && github.event_name == 'push'
+          run: echo '::set-env name=SOURCE_DIR::${{ github.workspace }}/modules/prod'
+
         - name: Checkout
           uses: actions/checkout@v2
     
         - name: Setup Terraform
           uses: hashicorp/setup-terraform@v1.1.0
 
-        - name: Terraform Init
+        - name: Terraform Init $SOURCE_DIR
           run: terraform init $SOURCE_DIR
 
         - name: Terraform Validate
           id: validate
-          run: terraform validate /home/runner/work/actionWithTerraform/ -no-color
+          run: terraform validate $SOURCE_DIR -no-color
 
         - name: Terraform Plan
           if: github.event_name == 'pull'
@@ -36,8 +48,3 @@ jobs:
         - name: Terraform Apply
           if: github.ref == 'refs/heads/master' && github.event_name == 'push'
           run: terraform apply -auto-approve $SOURCE_DIR
-
-        - name: Check Branch
-          if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
-          if: github.ref == 'refs/heads/test' && github.event_name == 'push'
-          if: github.ref == 'refs/heads/production' && github.event_name == 'push'

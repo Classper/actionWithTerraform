@@ -1,4 +1,4 @@
-variable "group"{
+variable "group" {
     type = string
 }
 
